@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react'
+import ComplaintDetail from '../pages/ComplaintDetail'
 
 function Sidebar({ onLogout, active, setActive }){
   return (
@@ -279,6 +280,8 @@ export default function Dashboard({ onLogout }){
     )
   }
 
+
+
   return (
     <div className="dashboard-root">
       <Sidebar onLogout={onLogout} active={active} setActive={setActive} />
@@ -298,22 +301,71 @@ export default function Dashboard({ onLogout }){
             </section>
 
             <section className="panels">
-              <div className="panel heatmap">
-                <div className="panel-title">Complaint Heatmap</div>
-                <div className="heatmap-placeholder">Interactive Map View</div>
+              <div style={{display:'flex',flexDirection:'column',gap:12}}>
+                <div className="panel notifications-panel">
+                  <div className="panel-title">Notifications</div>
+
+                  <div className="notif-list-body">
+                    {complaints && complaints.slice().sort((a,b)=> new Date(b.date) - new Date(a.date)).slice(0,5).map(c => (
+                      <div key={c.id} className="notif-item">
+                        {c.status === 'Pending' && <span className="notif-badge">NEW</span>}
+                        <div className="notif-title">{c.title}</div>
+                        <div className="notif-sub">{c.location} • {c.date}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
 
-              <div className="panel categories">
-                <div className="panel-title">Issues by Category</div>
-                <CategoryBar label="Roads" value={32} percent={25} />
-                <CategoryBar label="Water" value={28} percent={22} />
-                <CategoryBar label="Electricity" value={25} percent={20} />
-                <CategoryBar label="Waste" value={22} percent={17} />
-                <CategoryBar label="Drainage" value={15} percent={12} />
-                <CategoryBar label="Other" value={5} percent={4} />
+              <div style={{display:'flex',flexDirection:'column',gap:12}}>
+                <div className="panel categories">
+                  <div className="panel-title">Issues by Category</div>
+                  <CategoryBar label="Pothole" value={32} percent={25} />
+                  <CategoryBar label="Street Light" value={28} percent={22} />
+                  <CategoryBar label="Garbage" value={25} percent={20} />
+                </div>
+
+                <div className="panel pending-panel">
+                  <div className="panel-title" style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                    <div style={{display:'flex',alignItems:'center',gap:8}}>
+                      <span style={{fontSize:18}}>⚠️</span>
+                      <div>Pending Complaints - Needs Immediate Action</div>
+                    </div>
+
+                    <div className="pending-count">{pendingCount} Pending</div>
+                  </div>
+
+                  <div className="pending-list">
+                    {complaints && complaints.filter(c=>c.status === 'Pending').slice().sort((a,b)=> new Date(b.date) - new Date(a.date)).map((c, idx) => (
+                      <div key={c.id} className={`pending-item ${idx===0? 'highlight':''}`}>
+                        <img src={c.img || '/logo192.png'} alt="thumb" className="thumb" />
+
+                        <div className="pending-body">
+                          <div className="pending-title">{c.title}</div>
+                          <div className="pending-sub">{c.location}</div>
+                        </div>
+
+                        <div className="pending-meta">
+                          <div className="priority">Priority: Medium</div>
+                          <div className="date">{c.date}</div>
+                        </div>
+                      </div>
+                    ))}
+
+                    {complaints && complaints.filter(c=>c.status === 'Pending').length === 0 && (
+                      <div style={{ color: '#6b7280' }}>No pending complaints</div>
+                    )}
+                  </div>
+                </div>
               </div>
             </section>
           </>
+        )}
+
+        {active === 'complaintDetail' && selected && (
+          <div className="complaints-page">
+            <ComplaintDetail complaint={selected} onBack={()=>{ setActive('complaints'); setSelected(null) }} onSave={(next)=>{ handleSave(next); setSelected(next) }} authorities={authorities} />
+          </div>
         )}
 
         {active === 'complaints' && (
@@ -342,20 +394,20 @@ export default function Dashboard({ onLogout }){
                 <div>Actions</div>
               </div>
 
-              {filtered.map(c=> (
-                <div key={c.id} className="table-row" onClick={()=>setSelected(c)}>
-                  <div className="cell">#{c.id}</div>
-                  <div className="cell title-cell">
-                    <img src={c.img} className="thumb small" alt=""/>
-                    <div>{c.title}</div>
-                  </div>
-                  <div className="cell">{c.location}</div>
-                  <div className="cell">{c.category}</div>
-                  <div className="cell"><span className={`badge ${c.status.toLowerCase().replace(' ','')}`}>{c.status}</span></div>
-                  <div className="cell">{c.date}</div>
-                  <div className="cell"><button className="btn" onClick={(e)=>{e.stopPropagation(); setSelected(c)}}>View</button></div>
-                </div>
-              ))}
+                  {filtered.map(c=> (
+                    <div key={c.id} className="table-row">
+                      <div className="cell">#{c.id}</div>
+                      <div className="cell title-cell">
+                        <img src={c.img} className="thumb small" alt=""/>
+                        <div>{c.title}</div>
+                      </div>
+                      <div className="cell">{c.location}</div>
+                      <div className="cell">{c.category}</div>
+                      <div className="cell"><span className={`badge ${c.status.toLowerCase().replace(' ','')}`}>{c.status}</span></div>
+                      <div className="cell">{c.date}</div>
+                      <div className="cell"><button className="btn" onClick={(e)=>{e.stopPropagation(); console.log('View clicked', c); setSelected(c); setActive('complaintDetail')}}>View</button></div>
+                    </div>
+                  ))}
             </div>
           </div>
         )}
@@ -403,74 +455,9 @@ export default function Dashboard({ onLogout }){
           </div>
         )}
 
-        {active === 'reports' && (
-          <div className="reports-page">
-            <div className="panel">
-              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-                <div style={{flex:1}}>
-                  <div style={{fontWeight:700,marginBottom:6}}>Date Range</div>
-                  <select style={{width:'60%',padding:10,borderRadius:8,border:'1px solid #eef2f7'}}>
-                    <option>This Month</option>
-                    <option>Last Month</option>
-                    <option>This Year</option>
-                    <option>All Time</option>
-                  </select>
-                </div>
-                <div style={{display:'flex',gap:8,alignItems:'center'}}>
-                  <button className="btn" onClick={exportCSV}>CSV</button>
-                  <button className="btn" style={{background:'#16a34a',color:'#fff'}} onClick={exportPDF}>PDF</button>
-                </div>
-              </div>
-            </div>
+        
 
-            <div className="stats-grid" style={{marginTop:12}}>
-              <div className="stat-card"><div className="stat-title">Total Complaints</div><div className="stat-value">{totalComplaints}</div></div>
-              <div className="stat-card"><div className="stat-title">Pending</div><div className="stat-value" style={{color:'#b45309'}}>{pendingCount}</div></div>
-              <div className="stat-card"><div className="stat-title">In Progress</div><div className="stat-value" style={{color:'#2563eb'}}>{inProgressCount}</div></div>
-              <div className="stat-card"><div className="stat-title">Completed</div><div className="stat-value" style={{color:'#16a34a'}}>{completedCount}</div></div>
-            </div>
-
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,marginTop:16}}>
-              <div className="panel">
-                <div className="panel-title">Performance Metrics</div>
-                <div style={{display:'grid',gap:12}}>
-                  <div style={{background:'#f8fafc',padding:12,borderRadius:8,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                    <div>Average Resolution Time</div>
-                    <div style={{color:'#16a34a',fontWeight:700}}>{avgResolutionDays} days</div>
-                  </div>
-                  <div style={{background:'#f8fafc',padding:12,borderRadius:8,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                    <div>Resolution Rate</div>
-                    <div style={{color:'#16a34a',fontWeight:700}}>{resolutionRate}%</div>
-                  </div>
-                  <div style={{background:'#f8fafc',padding:12,borderRadius:8,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                    <div>Active Authorities</div>
-                    <div style={{fontWeight:700}}>{activeAuthoritiesCount}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="panel">
-                <div className="panel-title">Complaints by Category</div>
-                <div style={{marginTop:12,display:'grid',gap:10}}>
-                  {Object.entries(complaintsByCategory).map(([k,v])=>{
-                    const percent = totalComplaints ? Math.round((v/totalComplaints)*100) : 0
-                    return (
-                      <div key={k} style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-                        <div style={{width:'60%'}}>
-                          <div style={{fontSize:14,color:'#374151',marginBottom:6}}>{k}</div>
-                          <div className="cat-bar"><div className="cat-fill" style={{width:`${percent}%`}} /></div>
-                        </div>
-                        <div style={{width:80,textAlign:'right',color:'#6b7280'}}>{v} ({percent}%)</div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <ComplaintModal complaint={selected} onClose={()=>setSelected(null)} onSave={handleSave} />
+        {/* ComplaintModal removed: view action no longer opens modal per user request */}
         <AuthorityModal authority={authModal} onClose={()=>setAuthModal(null)} onSave={(data)=>{
           const next = data.id ? authorities.map(a=> a.id===data.id ? data : a) : [...authorities, {...data, id: Date.now()}]
           saveAuthorities(next)

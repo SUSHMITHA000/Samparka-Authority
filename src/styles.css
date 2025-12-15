@@ -88,15 +88,15 @@ body{margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, A
 
 /* Dashboard styles */
 .dashboard-root{display:flex;min-height:100vh;background:#f3f7f9}
-.sidebar{width:220px;background:white;padding:20px;border-right:1px solid #eef2f7;display:flex;flex-direction:column;justify-content:space-between}
+.sidebar{width:220px;background:white;padding:18px 20px;/* reduce top padding slightly and align items to top */border-right:1px solid #eef2f7;display:flex;flex-direction:column;justify-content:flex-start}
 .brand{display:flex;gap:12px;align-items:center}
 .brand-icon{width:40px;height:40px;border-radius:8px;background:#e6f6ea;color:#16a34a;display:flex;align-items:center;justify-content:center;font-weight:700}
 .brand-title{font-weight:700}
 .brand-sub{font-size:12px;color:#6b7280}
-.nav{display:flex;flex-direction:column;margin-top:18px}
+.nav{display:flex;flex-direction:column;margin-top:8px}
 .nav-item{background:transparent;border:0;padding:10px 8px;text-align:left;border-radius:8px;color:#374151;cursor:pointer;margin-bottom:6px}
 .nav-item.active{background:#ecfdf5;color:#065f46}
-.sidebar-bottom{padding:10px}
+.sidebar-bottom{padding:10px;margin-top:auto}
 .btn.logout{background:white;border:1px solid #e6eef8;padding:8px;border-radius:8px;width:100%}
 
 .dashboard-main{flex:1;padding:24px}
@@ -110,7 +110,49 @@ body{margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, A
 .panels{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-top:18px}
 .panel{background:white;padding:16px;border-radius:10px}
 .panel-title{font-weight:700;margin-bottom:12px}
-.heatmap-placeholder{height:180px;border-radius:12px;background:#e8f6ea;display:flex;align-items:center;justify-content:center;color:#14532d}
+.heatmap-placeholder{ /* allow notifications to scroll and stay inside the panel */
+  border-radius:12px;
+  background:#e8f6ea;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  color:#14532d;
+  padding:12px;
+  min-height:140px;
+  max-height:300px;
+  overflow:auto;
+}
+
+/* Notifications list inside dashboard */
+.notif-list{display:flex;flex-direction:column;align-items:flex-start}
+.notif-list-body{display:flex;flex-direction:column;gap:10px;width:100%}
+.notif-item{background:#ffffff;padding:12px;border-radius:8px;border:1px solid #eef6ee;display:block;width:100%;box-sizing:border-box}
+.notif-title{font-weight:700;color:#0f1724}
+.notif-sub{color:#6b7280;font-size:13px;margin-top:6px}
+.notif-badge{background:#ef4444;color:#fff;padding:4px 8px;border-radius:999px;font-weight:700;font-size:12px;margin-bottom:8px;display:inline-block}
+
+/* small red dot variant if we want a compact indicator later */
+.notif-badge.dot{background:transparent;color:transparent;padding:0;margin-right:8px;position:relative}
+.notif-badge.dot::before{content:'';width:10px;height:10px;border-radius:999px;background:#ef4444;display:inline-block;vertical-align:middle}
+
+/* Visual improvements when list grows */
+.notif-list-body::-webkit-scrollbar{height:8px;width:8px}
+.notif-list-body::-webkit-scrollbar-thumb{background:#cfe9d8;border-radius:999px}
+
+/* Pending complaints panel styles (match provided reference) */
+.pending-panel{position:relative;border-left:6px solid #fbbf24;padding:14px;background:linear-gradient(180deg,#fffef8,#fff);}
+.notifications-panel{padding:12px}
+.notifications-panel .notif-item{padding:10px;border-radius:8px;border:1px solid #f1f5f9;background:#fff}
+.pending-count{background:#fff7ed;color:#92400e;padding:8px 12px;border-radius:999px;font-weight:700}
+.pending-list{display:flex;flex-direction:column;gap:12px}
+.pending-item{display:flex;align-items:center;gap:14px;background:#fff;padding:12px;border-radius:8px;border:1px solid #f1f5f9}
+.pending-item.highlight{background:#fff7ed}
+.pending-body{flex:1}
+.pending-title{font-weight:800;color:#111827}
+.pending-sub{color:#6b7280;margin-top:6px}
+.pending-meta{text-align:right;min-width:120px}
+.pending-meta .priority{color:#ef4444;font-weight:700}
+.pending-meta .date{color:#6b7280;margin-top:6px;font-size:13px}
 
 .categories .cat-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}
 .cat-label{width:80px;color:#374151}
@@ -155,6 +197,10 @@ body{margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, A
 
 /* Complaints page styles */
 .complaints-page{padding-top:6px}
+.complaint-detail{padding-top:6px}
+.detail-card{background:#fff;padding:16px;border-radius:10px}
+.complaint-detail .panel{background:#fff;padding:12px;border-radius:10px}
+.complaint-detail .detail-card h3{margin:0}
 .complaints-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .complaints-head h2{margin:0}
 .complaints-controls{display:flex;gap:12px;align-items:center}
