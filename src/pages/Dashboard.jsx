@@ -1,5 +1,2 @@
-// Dashboard removed. The app now focuses solely on the login UI.
-import React from 'react'
-export default function Dashboard(){
-  return null
-}
+// Re-export the actual dashboard component to avoid duplicate files and confusion.
+export { default } from '../components/Dashboard'
