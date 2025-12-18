@@ -7,7 +7,7 @@ function Sidebar({ onLogout, active, setActive }){
       <div className="brand">
         <div className="brand-icon">NG</div>
         <div>
-          <div className="brand-title">NammaGrama</div>
+          <div className="brand-title">Samparka</div>
           <div className="brand-sub">Admin Portal</div>
         </div>
       </div>
@@ -52,7 +52,7 @@ function ComplaintModal({ complaint, onClose, onSave }){
   const [draft, setDraft] = useState(complaint)
 
   React.useEffect(()=>{
-    setDraft(complaint)
+    setDraft(complaint ? { ...complaint, priority: complaint.priority || 'Medium' } : null)
   },[complaint])
 
   if(!draft) return null
@@ -88,17 +88,23 @@ function ComplaintModal({ complaint, onClose, onSave }){
               </select>
             </p>
             <p>
-              <strong>Assign To:</strong>
-              <input value={draft.authority||''} onChange={e=>handleChange('authority', e.target.value)} placeholder="Authority name" style={{marginLeft:8,padding:6,borderRadius:8,border:'1px solid #e6eef8'}} />
+              <strong>Priority:</strong>
+              <select value={draft.priority} onChange={e=>handleChange('priority', e.target.value)} style={{marginLeft:8,padding:6,borderRadius:8}}>
+                <option>Low</option>
+                <option>Medium</option>
+                <option>High</option>
+              </select>
             </p>
+
             <p><strong>Date:</strong> {draft.date}</p>
             <p className="modal-desc">{draft.desc}</p>
+            <img src={draft.img || '/logo192.png'} alt="evidence" style={{marginTop:12,maxWidth:'100%',borderRadius:8}} />
           </div>
         </div>
       </div>
     </div>
   )
-}
+} 
 
 export default function Dashboard({ onLogout }){
   const [active, setActive] = useState('dashboard')
@@ -128,11 +134,11 @@ export default function Dashboard({ onLogout }){
   }
 
   const defaultComplaints = [
-    { id: 1, title: 'Pothole on Main Road', location: 'Main Road, Near Bus Stand', category: 'Roads & Infrastructure', status: 'In Progress', date: '2025-04-10', desc: 'Large pothole causing vehicle damage.', img:'/logo192.png', authority: '' },
-    { id: 2, title: 'Garbage Not Collected', location: 'Gandhi Nagar, Ward 3', category: 'Waste Management', status: 'Pending', date: '2025-04-12', desc: 'Garbage not collected for 3 days.', img:'/logo192.png', authority: '' },
-    { id: 3, title: 'Street Light Not Working', location: 'Temple Street, Ward 5', category: 'Electricity', status: 'Completed', date: '2025-04-05', desc: 'Street light broken near temple.', img:'/logo192.png', authority: '' },
-    { id: 4, title: 'Water Supply Issue', location: 'Nehru Colony, Ward 2', category: 'Water Supply', status: 'In Progress', date: '2025-04-11', desc: 'Low pressure and intermittent supply.', img:'/logo192.png', authority: '' },
-    { id: 5, title: 'Drainage Blockage', location: 'Market Area, Ward 1', category: 'Drainage', status: 'Pending', date: '2025-04-13', desc: 'Drain clogged causing overflow.', img:'/logo192.png', authority: '' }
+    { id: 1, title: 'Pothole on Main Road', location: 'Main Road, Near Bus Stand', category: 'Roads & Infrastructure', status: 'In Progress', date: '2025-04-10', desc: 'Large pothole causing vehicle damage.', img:'/logo192.png', authority: '', priority: 'Medium' },
+    { id: 2, title: 'Garbage Not Collected', location: 'Gandhi Nagar, Ward 3', category: 'Waste Management', status: 'Pending', date: '2025-04-12', desc: 'Garbage not collected for 3 days.', img:'/logo192.png', authority: '', priority: 'Medium' },
+    { id: 3, title: 'Street Light Not Working', location: 'Temple Street, Ward 5', category: 'Electricity', status: 'Completed', date: '2025-04-05', desc: 'Street light broken near temple.', img:'/logo192.png', authority: '', priority: 'Low' },
+    { id: 4, title: 'Water Supply Issue', location: 'Nehru Colony, Ward 2', category: 'Water Supply', status: 'In Progress', date: '2025-04-11', desc: 'Low pressure and intermittent supply.', img:'/logo192.png', authority: '', priority: 'High' },
+    { id: 5, title: 'Drainage Blockage', location: 'Market Area, Ward 1', category: 'Drainage', status: 'Pending', date: '2025-04-13', desc: 'Drain clogged causing overflow.', img:'/logo192.png', authority: '', priority: 'Medium' }
   ]
 
   const [complaints, setComplaints] = useState(()=>{
@@ -150,6 +156,7 @@ export default function Dashboard({ onLogout }){
 
   const filtered = complaints.filter(c=>{
     if(filter === 'pending' && c.status !== 'Pending') return false
+    if(filter === 'active' && !(c.status === 'Pending' || c.status === 'In Progress')) return false
     if(filter === 'inprogress' && c.status !== 'In Progress') return false
     if(filter === 'completed' && c.status !== 'Completed') return false
     if(search && !(`${c.title} ${c.location} ${c.category}`.toLowerCase().includes(search.toLowerCase()))) return false
@@ -167,6 +174,8 @@ export default function Dashboard({ onLogout }){
   const pendingCount = complaints.filter(c=>c.status === 'Pending').length
   const inProgressCount = complaints.filter(c=>c.status === 'In Progress').length
   const completedCount = complaints.filter(c=>c.status === 'Completed').length
+
+  const activeCount = pendingCount + inProgressCount
 
   const activeAuthoritiesCount = authorities.filter(a=>a.status === 'Active').length
 
@@ -307,7 +316,7 @@ export default function Dashboard({ onLogout }){
 
                   <div className="notif-list-body">
                     {complaints && complaints.slice().sort((a,b)=> new Date(b.date) - new Date(a.date)).slice(0,5).map(c => (
-                      <div key={c.id} className="notif-item">
+                      <div key={c.id} className="notif-item" onClick={()=>{ setSelected(c) }} style={{cursor:'pointer'}}>
                         {c.status === 'Pending' && <span className="notif-badge">NEW</span>}
                         <div className="notif-title">{c.title}</div>
                         <div className="notif-sub">{c.location} • {c.date}</div>
@@ -346,7 +355,7 @@ export default function Dashboard({ onLogout }){
                         </div>
 
                         <div className="pending-meta">
-                          <div className="priority">Priority: Medium</div>
+                          <div className="priority">Priority: {c.priority || 'Medium'}</div>
                           <div className="date">{c.date}</div>
                         </div>
                       </div>
@@ -376,9 +385,10 @@ export default function Dashboard({ onLogout }){
                 <input className="search" placeholder="Search complaints..." value={search} onChange={e=>setSearch(e.target.value)} />
                 <div className="filter">
                   <button className={`tab ${filter==='all'?'active':''}`} onClick={()=>setFilter('all')}>All ({complaints.length})</button>
-                  <button className={`tab ${filter==='pending'?'active':''}`} onClick={()=>setFilter('pending')}>Pending (2)</button>
-                  <button className={`tab ${filter==='inprogress'?'active':''}`} onClick={()=>setFilter('inprogress')}>In Progress (2)</button>
-                  <button className={`tab ${filter==='completed'?'active':''}`} onClick={()=>setFilter('completed')}>Completed (1)</button>
+                  <button className={`tab ${filter==='active'?'active':''}`} onClick={()=>setFilter('active')}>Active ({pendingCount + inProgressCount})</button>
+                  <button className={`tab ${filter==='pending'?'active':''}`} onClick={()=>setFilter('pending')}>Pending ({pendingCount})</button>
+                  <button className={`tab ${filter==='inprogress'?'active':''}`} onClick={()=>setFilter('inprogress')}>In Progress ({inProgressCount})</button>
+                  <button className={`tab ${filter==='completed'?'active':''}`} onClick={()=>setFilter('completed')}>Completed ({completedCount})</button>
                 </div>
               </div>
             </div>
@@ -405,7 +415,7 @@ export default function Dashboard({ onLogout }){
                       <div className="cell">{c.category}</div>
                       <div className="cell"><span className={`badge ${c.status.toLowerCase().replace(' ','')}`}>{c.status}</span></div>
                       <div className="cell">{c.date}</div>
-                      <div className="cell"><button className="btn" onClick={(e)=>{e.stopPropagation(); console.log('View clicked', c); setSelected(c); setActive('complaintDetail')}}>View</button></div>
+                      <div className="cell"><button className="btn" onClick={(e)=>{e.stopPropagation(); setSelected(c); setActive('complaintDetail');}}>View</button></div>
                     </div>
                   ))}
             </div>
@@ -457,11 +467,15 @@ export default function Dashboard({ onLogout }){
 
         
 
-        {/* ComplaintModal removed: view action no longer opens modal per user request */}
+        {/* ComplaintModal: opened when a notification or table row is clicked */}
         <AuthorityModal authority={authModal} onClose={()=>setAuthModal(null)} onSave={(data)=>{
           const next = data.id ? authorities.map(a=> a.id===data.id ? data : a) : [...authorities, {...data, id: Date.now()}]
           saveAuthorities(next)
         }} />
+
+        {selected && active !== 'complaintDetail' && (
+          <ComplaintModal complaint={selected} onClose={()=>setSelected(null)} onSave={(data)=>{ handleSave(data); setSelected(null) }} />
+        )}
       </div>
     </div>
   )

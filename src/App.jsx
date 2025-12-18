@@ -12,7 +12,7 @@ export default function App(){
       {authed ? (
         <Dashboard onLogout={() => setAuthed(false)} />
       ) : (
-        <Login onSuccess={() => setAuthed(true)} />
+        <Login onSuccess={() => setAuthed(true)} /> 
       )}
     </div>
   )

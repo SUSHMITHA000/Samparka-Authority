@@ -54,14 +54,23 @@ export default function ComplaintDetail({ complaint, onBack, onSave, authorities
 
             <div style={{marginTop:12}} className="panel">
               <div className="panel-title">Upload Resolution Proof</div>
-              <div style={{border:'2px dashed #e5e7eb',borderRadius:8,padding:22,display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
-                <input type="file" id="proof-file" style={{display:'none'}} onChange={e=>handleFile(e.target.files)} />
-                <label htmlFor="proof-file" style={{cursor:'pointer',color:'#6b7280'}}>Upload resolution photo</label>
-                {proof && <div style={{marginTop:8}}>{proof.name}</div>}
-              </div>
-              <div style={{marginTop:12}}>
-                <button className="btn" style={{background:'#16a34a',color:'#fff',width:'100%'}} onClick={handleMarkResolved}>Mark as Resolved</button>
-              </div>
+              {(draft.status === 'Pending' || draft.status === 'In Progress') ? (
+                <>
+                  <div style={{border:'2px dashed #e5e7eb',borderRadius:8,padding:22,display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
+                    <input type="file" id="proof-file" style={{display:'none'}} onChange={e=>handleFile(e.target.files)} />
+                    <label htmlFor="proof-file" style={{cursor:'pointer',color:'#6b7280'}}>Upload resolution photo</label>
+                    {proof && <div style={{marginTop:8}}>{proof.name}</div>}
+                  </div>
+                  <div style={{marginTop:12}}>
+                    <button className="btn" style={{background:'#16a34a',color:'#fff',width:'100%'}} onClick={handleMarkResolved}>Mark as Resolved</button>
+                  </div>
+                </>
+              ) : (
+                <div style={{marginTop:12}}>
+                  <div className="panel-title">Resolution</div>
+                  <div style={{color:'#6b7280',padding:12}}>This complaint is completed. No further uploads are needed.</div>
+                </div>
+              )}
             </div>
           </div>
         </div>
