@@ -1,7 +1,13 @@
-import React, { useState, useMemo } from 'react'
 import ComplaintDetail from '../pages/ComplaintDetail'
+import React, { useState, useMemo, useEffect } from 'react'
+import { auth } from "../firebase";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../firebase";
+import { signOut } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
 
-function Sidebar({ onLogout, active, setActive }){
+
+function Sidebar({ onLogout, active, setActive, authority }) {
   return (
     <aside className="sidebar">
       <div className="brand">
@@ -9,6 +15,13 @@ function Sidebar({ onLogout, active, setActive }){
         <div>
           <div className="brand-title">Samparka</div>
           <div className="brand-sub">Admin Portal</div>
+          {authority && (
+  <div style={{ marginTop: 8, fontSize: 12, color: "#6b7280" }}>
+    <div><strong>ID:</strong> {authority.authorityId}</div>
+    <div>{authority.email}</div>
+  </div>
+)}
+
         </div>
       </div>
 
@@ -112,6 +125,32 @@ export default function Dashboard({ onLogout }){
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [authModal, setAuthModal] = useState(null)
+
+
+const [authority, setAuthority] = useState(null);
+const navigate = useNavigate();
+
+const handleLogout = async () => {
+  await signOut(auth);
+  navigate("/login");
+};
+
+
+useEffect(() => {
+  const fetchAuthority = async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const snap = await getDoc(doc(db, "authorities", user.uid));
+    if (snap.exists()) {
+      setAuthority(snap.data());
+    }
+  };
+
+  fetchAuthority();
+}, []);
+
+
 
   const defaultAuthorities = [
     { id: 1, name: 'Road Authority', category: 'Roads & Infrastructure', phone: '+91 9876543210', email: 'roads@panchayat.gov', status: 'Active', assigned: 8, resolved: 45 },

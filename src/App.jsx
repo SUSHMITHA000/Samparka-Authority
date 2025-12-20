@@ -1,19 +1,33 @@
-import React, { useState } from 'react'
-import Login from './components/Login'
-import Dashboard from './components/Dashboard'
+import React from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
 
-export default function App(){
-  const [authed, setAuthed] = useState(() => {
-    try { return !!localStorage.getItem('mockAuth') } catch (e) { return false }
-  })
+import Login from "./components/Login";
+import AuthoritySignup from "./pages/AuthoritySignup";
+import Dashboard from "./pages/Dashboard";
+import ProtectedRoute from "./components/ProtectedRoute";
 
+export default function App() {
   return (
-    <div className="app-root">
-      {authed ? (
-        <Dashboard onLogout={() => setAuthed(false)} />
-      ) : (
-        <Login onSuccess={() => setAuthed(true)} /> 
-      )}
-    </div>
-  )
+    <Routes>
+      {/* Default */}
+      <Route path="/" element={<Navigate to="/signup" replace />} />
+
+      {/* Public routes */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<AuthoritySignup />} />
+
+      {/* 🔐 Protected dashboard */}
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </Routes>
+  );
 }

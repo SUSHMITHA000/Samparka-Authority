@@ -1,64 +1,82 @@
-import React, { useState } from 'react'
+import React, { useState } from "react";
+import { signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "../firebase";
+import { useNavigate, Link } from "react-router-dom";
 
-export default function Login({ onSuccess }) {
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [message, setMessage] = useState(null)
+export default function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    setMessage(null)
-    // Accept any email/username and password (always succeed)
-    setMessage({ type: 'success', text: 'Signed in (demo) — welcome.' })
-    try { localStorage.setItem('mockAuth', JSON.stringify({ username, ts: Date.now() })) } catch (e) {}
-    if (onSuccess) onSuccess()
-  }
+  const navigate = useNavigate();
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      // 1️⃣ Firebase Auth login
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+      const uid = userCredential.user.uid;
+
+      // 2️⃣ CHECK authority existence
+      const authorityDoc = await getDoc(doc(db, "authorities", uid));
+
+      if (!authorityDoc.exists()) {
+        // ❌ NOT an authority
+        await signOut(auth);
+        alert("Access denied. You are not an authorized authority.");
+        return;
+      }
+
+      // ✅ AUTHORIZED
+      navigate("/dashboard");
+
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="login-root">
-      <header className="login-header">
-        <div className="shield" aria-hidden>
-          <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="12" cy="8" r="3" fill="#39B54A" />
-            <path d="M12 2l7 3v4.5c0 5.5-3.6 10.7-7 12-3.4-1.3-7-6.5-7-12V5l7-3z" fill="#fff" opacity="0.08" />
-            <path d="M12 2l7 3v4.5c0 5.5-3.6 10.7-7 12-3.4-1.3-7-6.5-7-12V5l7-3z" stroke="#39B54A" strokeWidth="1.2" fill="none" />
-          </svg>
-        </div>
-        <h1>Admin Portal</h1>
-        <p className="subtitle">NammaGrama Connect Management</p>
-      </header>
+    <div style={{ maxWidth: 420, margin: "60px auto" }}>
+      <h2>Authority Login</h2>
+      <p>Login using official credentials</p>
 
-      <main className="login-main">
-        <div className="card">
-          <h3>Admin Login</h3>
-          <p className="muted">Enter your credentials to access the dashboard</p>
+      <form onSubmit={handleLogin}>
+        <input
+          type="email"
+          placeholder="Official Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          style={{ width: "100%", marginBottom: 10 }}
+        />
 
-          {message && (
-            <div className={`banner ${message.type === 'error' ? 'err' : 'ok'}`}>{message.text}</div>
-          )}
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          style={{ width: "100%", marginBottom: 16 }}
+        />
 
-          <form onSubmit={handleSubmit} className="form">
-            <label className="label">Username
-              <div className="input-with-icon">
-                <span className="icon">👤</span>
-                <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="admin" />
-              </div>
-            </label>
+        <button type="submit" disabled={loading} style={{ width: "100%" }}>
+          {loading ? "Logging in..." : "Login"}
+        </button>
+      </form>
 
-            <label className="label">Password
-              <div className="input-with-icon">
-                <span className="icon">🔒</span>
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="●●●●●●●●" />
-              </div>
-            </label>
-
-            <button type="submit" className="btn login-btn">Login to Dashboard</button>
-          </form>
-
-          <div className="demo-note">Demo credentials: <strong>admin</strong> / <strong>password</strong></div>
-        </div>
-      </main>
+      <p style={{ marginTop: 12 }}>
+        New authority? <Link to="/signup">Create Authority Account</Link>
+      </p>
     </div>
-  )
+  );
 }
-

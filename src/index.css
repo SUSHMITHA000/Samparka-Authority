@@ -1,0 +1,2 @@
+/* index.css — forwards to the existing styles.css so existing import works */
+@import './styles.css';

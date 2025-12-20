@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react'
+
+import React from "react";
 
 export default function ComplaintDetail({ complaint, onBack, onSave, authorities=[] }){
   const [draft, setDraft] = useState(complaint)
