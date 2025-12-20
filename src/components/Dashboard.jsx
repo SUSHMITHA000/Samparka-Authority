@@ -131,15 +131,25 @@ const [authority, setAuthority] = useState(null);
 const navigate = useNavigate();
 
 const handleLogout = async () => {
-  await signOut(auth);
-  navigate("/login");
+  try {
+    await signOut(auth);
+    localStorage.clear(); // safety cleanup
+    navigate("/login", { replace: true });
+    } catch (e) {
+      console.error("Logout failed", e);
+    }
+  
+  
 };
-
 
 useEffect(() => {
   const fetchAuthority = async () => {
     const user = auth.currentUser;
-    if (!user) return;
+
+    if (!user) {
+      navigate("/login");
+      return;
+    } // ✅ MISSING BRACE WAS HERE
 
     const snap = await getDoc(doc(db, "authorities", user.uid));
     if (snap.exists()) {
@@ -148,7 +158,8 @@ useEffect(() => {
   };
 
   fetchAuthority();
-}, []);
+}, [navigate]);
+
 
 
 
@@ -332,7 +343,13 @@ useEffect(() => {
 
   return (
     <div className="dashboard-root">
-      <Sidebar onLogout={onLogout} active={active} setActive={setActive} />
+      <Sidebar
+          onLogout={handleLogout}
+          active={active}
+          setActive={setActive}
+          authority={authority}
+/>
+
 
       <div className="dashboard-main">
         {active === 'dashboard' && (

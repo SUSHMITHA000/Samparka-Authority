@@ -16,7 +16,7 @@ export default function AuthoritySignup() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // 🔒 Block signup if authority already exists
+  // 🔒 Allow signup only once
   useEffect(() => {
     const checkAuthorityExists = async () => {
       const snapshot = await getDocs(collection(db, "authorities"));
@@ -53,10 +53,11 @@ export default function AuthoritySignup() {
         createdAt: serverTimestamp(),
       });
 
+      // 🔐 Force login flow
       await auth.signOut();
 
       alert(
-        `Signup successful!\n\nYour Authority ID: ${authorityId}\n\nPlease login to continue.`
+        `Signup successful!\n\nYour Authority ID:\n${authorityId}\n\nPlease login to continue.`
       );
 
       navigate("/login");
@@ -96,7 +97,6 @@ export default function AuthoritySignup() {
         </button>
       </form>
 
-      {/* 👇 Login link added */}
       <p style={{ marginTop: 16, textAlign: "center" }}>
         Already have an account?{" "}
         <Link to="/login" style={{ color: "#2563eb" }}>
