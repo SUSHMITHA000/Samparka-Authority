@@ -1,5 +1,7 @@
 
 import React from "react";
+import { useState, useEffect } from "react";
+
 
 export default function ComplaintDetail({ complaint, onBack, onSave, authorities=[] }){
   const [draft, setDraft] = useState(complaint)
