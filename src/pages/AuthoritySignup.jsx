@@ -17,15 +17,15 @@ export default function AuthoritySignup() {
   const navigate = useNavigate();
 
   // 🔒 Allow signup only once
-  useEffect(() => {
-    const checkAuthorityExists = async () => {
-      const snapshot = await getDocs(collection(db, "authorities"));
-      if (!snapshot.empty) {
-        navigate("/login");
-      }
-    };
-    checkAuthorityExists();
-  }, [navigate]);
+  //useEffect(() => {
+    //const checkAuthorityExists = async () => {
+      //const snapshot = await getDocs(collection(db, "authorities"));
+      //if (!snapshot.empty) {
+        //navigate("/login");
+      //}
+   // };
+   // checkAuthorityExists();
+ // }, [navigate]);
 
   const generateAuthorityId = (uid) => {
     const shortUid = uid.slice(-4).toUpperCase();
