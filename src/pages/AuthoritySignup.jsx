@@ -1,12 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import {
-  collection,
-  doc,
-  getDocs,
-  setDoc,
-  serverTimestamp,
-} from "firebase/firestore";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import { useNavigate, Link } from "react-router-dom";
 
@@ -15,17 +9,6 @@ export default function AuthoritySignup() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
-  // 🔒 Allow signup only once
-  //useEffect(() => {
-    //const checkAuthorityExists = async () => {
-      //const snapshot = await getDocs(collection(db, "authorities"));
-      //if (!snapshot.empty) {
-        //navigate("/login");
-      //}
-   // };
-   // checkAuthorityExists();
- // }, [navigate]);
 
   const generateAuthorityId = (uid) => {
     const shortUid = uid.slice(-4).toUpperCase();
@@ -50,14 +33,14 @@ export default function AuthoritySignup() {
       await setDoc(doc(db, "authorities", user.uid), {
         authorityId,
         email: user.email,
+        role: "Panchayat Authority",
         createdAt: serverTimestamp(),
       });
 
-      // 🔐 Force login flow
       await auth.signOut();
 
       alert(
-        `Signup successful!\n\nYour Authority ID:\n${authorityId}\n\nPlease login to continue.`
+        `Signup Successful!\n\nAuthority ID: ${authorityId}\n\nPlease login to continue.`
       );
 
       navigate("/login");
@@ -69,40 +52,169 @@ export default function AuthoritySignup() {
   };
 
   return (
-    <div style={{ maxWidth: 420, margin: "60px auto" }}>
-      <h2>Authority Signup</h2>
-      <p>One-time setup for Panchayat Authority</p>
+    <div style={styles.page}>
+      {/* Header */}
+      <div style={styles.header}>
+        <div style={styles.icon}>🛡️</div>
+        <h1 style={styles.headerTitle}>AUTHORITY</h1>
+        <p style={styles.headerSubtitle}>SAMPARKA</p>
+      </div>
 
-      <form onSubmit={handleSignup}>
-        <input
-          type="email"
-          placeholder="Official Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={{ width: "100%", marginBottom: 10 }}
-        />
+      {/* Card */}
+      <div style={styles.card}>
+        <h2 style={styles.cardTitle}>Authority Registration</h2>
+        <p style={styles.cardSubtitle}>
+          One-time setup for Panchayat administrators
+        </p>
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          style={{ width: "100%", marginBottom: 16 }}
-        />
+        <form onSubmit={handleSignup}>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Official Email Address</label>
+            <input
+              type="email"
+              placeholder="authority@panchayat.gov.in"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              style={styles.input}
+            />
+          </div>
 
-        <button type="submit" disabled={loading} style={{ width: "100%" }}>
-          {loading ? "Creating account..." : "Create Authority Account"}
-        </button>
-      </form>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Create Password</label>
+            <input
+              type="password"
+              placeholder="Enter secure password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              style={styles.input}
+            />
+          </div>
 
-      <p style={{ marginTop: 16, textAlign: "center" }}>
-        Already have an account?{" "}
-        <Link to="/login" style={{ color: "#2563eb" }}>
-          Login
-        </Link>
-      </p>
+          <button type="submit" disabled={loading} style={styles.button}>
+            {loading ? "Creating Account..." : "Register Authority"}
+          </button>
+        </form>
+
+        <div style={styles.footer}>
+          Already registered?{" "}
+          <Link to="/login" style={styles.link}>
+            Login to Dashboard
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
+
+/* ---------------- STYLES ---------------- */
+
+const styles = {
+  page: {
+    minHeight: "100vh",
+    background: "#f4f7f9",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    fontFamily: "Segoe UI, Tahoma, sans-serif",
+  },
+
+  header: {
+    textAlign: "center",
+    marginTop: "60px",
+    marginBottom: "30px",
+  },
+
+  icon: {
+    width: "70px",
+    height: "70px",
+    margin: "auto",
+    borderRadius: "50%",
+    background: "#e7f5ee",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "32px",
+  },
+
+  headerTitle: {
+    margin: "15px 0 5px",
+    fontSize: "28px",
+    fontWeight: "700",
+    color: "#111827",
+  },
+
+  headerSubtitle: {
+    fontSize: "14px",
+    color: "#6b7280",
+  },
+
+  card: {
+    width: "420px",
+    background: "#ffffff",
+    padding: "28px",
+    borderRadius: "10px",
+    boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
+  },
+
+  cardTitle: {
+    fontSize: "20px",
+    fontWeight: "600",
+    marginBottom: "4px",
+  },
+
+  cardSubtitle: {
+    fontSize: "14px",
+    color: "#6b7280",
+    marginBottom: "20px",
+  },
+
+  formGroup: {
+    marginBottom: "16px",
+  },
+
+  label: {
+    display: "block",
+    fontSize: "14px",
+    fontWeight: "500",
+    marginBottom: "6px",
+    color: "#374151",
+  },
+
+  input: {
+    width: "100%",
+    padding: "10px 12px",
+    borderRadius: "6px",
+    border: "1px solid #d1d5db",
+    fontSize: "14px",
+    outline: "none",
+  },
+
+  button: {
+    width: "100%",
+    padding: "12px",
+    background: "#261c5cff",
+    color: "#ffffff",
+    border: "none",
+    borderRadius: "6px",
+    fontSize: "15px",
+    fontWeight: "500",
+    cursor: "pointer",
+    marginTop: "10px",
+    opacity: 1,
+  },
+
+  footer: {
+    textAlign: "center",
+    marginTop: "18px",
+    fontSize: "14px",
+    color: "#253b60ff",
+  },
+
+  link: {
+    color: "#253b60ff",
+    fontWeight: "500",
+    textDecoration: "none",
+  },
+};
