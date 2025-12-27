@@ -14,6 +14,9 @@ import {
 
 import { auth, db } from "../firebase";
 import ComplaintDetail from "../pages/ComplaintDetail";
+import Reports from "../pages/Reports.jsx";
+
+
 
 /* ---------------- SIDEBAR ---------------- */
 function Sidebar({ onLogout, active, setActive, authority }) {
@@ -297,37 +300,110 @@ export default function Dashboard() {
           </>
         )}
 
-        {/* ================= COMPLAINTS LIST ================= */}
-        {active === "complaints" && (
-          <div className="complaints-page">
-            <input
-              className="search"
-              placeholder="Search complaints..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
+        {active === 'reports' && (
+  <Reports complaints={complaints} />
+)}
 
-            <div className="panel complaints-table">
-              {filtered.map(c => (
-                <div key={c.id} className="table-row">
-                  <img src={c.img} alt="" className="thumb small" />
-                  <div>{c.title}</div>
-                  <div>{c.location}</div>
-                  <div>{c.status}</div>
-                  <button
-                    className="btn"
-                    onClick={() => {
-                      setSelected(c);
-                      setActive("complaintDetail");
-                    }}
-                  >
-                    View
-                  </button>
-                </div>
-              ))}
-            </div>
+
+        {/* ================= COMPLAINTS LIST ================= */}
+{active === "complaints" && (
+  <div className="complaints-page">
+    <div className="complaints-head">
+      <h2>Complaint Management</h2>
+
+      <div className="complaints-controls">
+        <input
+          className="search"
+          placeholder="Search complaints..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+
+        <div className="filter">
+          <button className={`tab ${filter === "all" ? "active" : ""}`}
+            onClick={() => setFilter("all")}>
+            All ({complaints.length})
+          </button>
+
+          <button className={`tab ${filter === "active" ? "active" : ""}`}
+            onClick={() => setFilter("active")}>
+            Active ({complaints.filter(c =>
+              c.status === "Pending" || c.status === "In Progress"
+            ).length})
+          </button>
+
+          <button className={`tab ${filter === "pending" ? "active" : ""}`}
+            onClick={() => setFilter("pending")}>
+            Pending ({complaints.filter(c => c.status === "Pending").length})
+          </button>
+
+          <button className={`tab ${filter === "inprogress" ? "active" : ""}`}
+            onClick={() => setFilter("inprogress")}>
+            In Progress ({complaints.filter(c => c.status === "In Progress").length})
+          </button>
+
+          <button className={`tab ${filter === "completed" ? "active" : ""}`}
+            onClick={() => setFilter("completed")}>
+            Completed ({complaints.filter(c => c.status === "Completed").length})
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div className="panel complaints-table">
+      <div className="table-head">
+        <div>ID</div>
+        <div>Title</div>
+        <div>Location</div>
+        <div>Category</div>
+        <div>Status</div>
+        <div>Date</div>
+        <div>Actions</div>
+      </div>
+
+      {filtered.map((c, index) => (
+        <div key={c.id} className="table-row">
+          <div className="cell">#{index + 1}</div>
+
+          <div className="cell title-cell">
+            <img src={c.img} alt="" className="thumb small" />
+            <div>{c.title}</div>
           </div>
-        )}
+
+          <div className="cell">{c.location}</div>
+          <div className="cell">{c.category}</div>
+
+          <div className="cell">
+            <span className={`badge ${c.status.toLowerCase().replace(" ", "")}`}>
+              {c.status}
+            </span>
+          </div>
+
+          <div className="cell">{c.date}</div>
+
+          <div className="cell">
+            <button
+              className="btn"
+              onClick={() => {
+                setSelected(c);
+                setActive("complaintDetail");
+              }}
+            >
+              View
+            </button>
+          </div>
+        </div>
+      ))}
+
+      {filtered.length === 0 && (
+        <div style={{ padding: 20, color: "#6b7280" }}>
+          No complaints found
+        </div>
+      )}
+    </div>
+  </div>
+)}
+
 
         {/* ================= COMPLAINT DETAIL ================= */}
         {active === "complaintDetail" && selected && (
