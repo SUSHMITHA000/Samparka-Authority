@@ -239,3 +239,37 @@ body{margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, A
 @media (max-width:480px){
   .login-card{padding:18px}
 }
+
+/* Community Updates Styles */
+.community-updates-page{padding-top:6px}
+.community-updates-container{display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:20px;margin-top:18px}
+
+.community-update-card{background:white;border-radius:12px;padding:20px;box-shadow:0 6px 18px rgba(16,24,40,0.04);border-left:6px solid #206bc4;transition:all 0.3s ease}
+.community-update-card:hover{box-shadow:0 10px 25px rgba(16,24,40,0.08);transform:translateY(-2px)}
+
+.update-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.update-title{margin:0;color:#111827;font-size:18px;font-weight:700}
+.update-badge{background:#206bc4;color:white;padding:4px 10px;border-radius:999px;font-weight:700;font-size:12px}
+
+.update-meta{display:flex;gap:20px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #f1f5f9}
+.update-meta-item{display:flex;align-items:center;gap:8px}
+.meta-label{font-weight:600;color:#374151;font-size:14px}
+.meta-value{color:#6b7280;font-size:14px}
+
+.update-description{margin-bottom:16px;color:#374151;line-height:1.6}
+.update-description p{margin:0}
+
+.update-footer{display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid #f1f5f9}
+.update-date{color:#9ca3af;font-size:12px}
+
+/* Community notification styles */
+.notif-item.community-notif{border-left:4px solid #206bc4;background:linear-gradient(90deg,rgba(32,107,196,0.05),transparent)}
+.notif-item.community-notif .notif-title{color:#206bc4}
+
+@media (max-width:900px){
+  .community-updates-container{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+}
+
+@media (max-width:600px){
+  .community-updates-container{grid-template-columns:1fr}
+}
