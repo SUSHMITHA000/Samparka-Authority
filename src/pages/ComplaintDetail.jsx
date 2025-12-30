@@ -1,182 +1,171 @@
-import React from "react";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import {
+  doc,
+  updateDoc,
+  addDoc,
+  collection,
+  serverTimestamp
+} from "firebase/firestore";
+import { db } from "../firebase";
 
-export default function ComplaintDetail({ complaint, onBack, onSave, authorities=[] }) {
+export default function ComplaintDetail({
+  complaint,
+  onBack,
+  onSave,
+  authorities = []
+}) {
   const [draft, setDraft] = useState(complaint);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
   const [proof, setProof] = useState(null);
 
   useEffect(() => {
     setDraft(complaint);
   }, [complaint]);
 
-  if (!draft) return (
-    <div className="complaints-page">
-      <div className="panel">No complaint selected</div>
-      <div style={{ marginTop: 12 }}>
-        <button className="btn" onClick={onBack}>Back to complaints</button>
-      </div>
-    </div>
-  );
+  if (!draft) return <div>No complaint selected</div>;
 
   const handleChange = (k, v) => setDraft({ ...draft, [k]: v });
-  const handleUpdateStatus = () => { if (onSave) onSave({ ...draft }); };
+
+  const handleUpdateStatus = async () => {
+    if (onSave) onSave({ ...draft });
+  };
+
   const handleAssign = (name) => {
     const next = { ...draft, authority: name };
     setDraft(next);
     if (onSave) onSave(next);
   };
-  const handleSendMessage = () => {
-    console.log('Send message:', message);
-    setMessage('');
-    alert('Message sent (demo)');
-  };
-  const handleFile = (files) => { if (files && files.length) setProof(files[0]); };
-  const handleMarkResolved = () => {
-    const next = { ...draft, status: 'Completed' };
-    if (onSave) onSave(next);
-    alert('Marked as resolved (demo)');
-  };
 
-  // ✅ NEW: image download (Cloudinary-safe)
-  const handleDownloadImage = async () => {
-    try {
-      const res = await fetch(draft.img);
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `complaint-${draft.id || "image"}.jpg`;
-      document.body.appendChild(a);
-      a.click();
-
-      a.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (e) {
-      alert("Image download failed");
+  /* =====================================================
+     🔔 CREATE OR UPDATE FIRESTORE NOTIFICATION
+     ===================================================== */
+  const handleSendMessage = async () => {
+    if (!message.trim()) {
+      alert("Message cannot be empty");
+      return;
     }
+
+    if (!draft?.userId) {
+      alert("userId missing in complaint");
+      return;
+    }
+
+    try {
+      let notificationId = draft.notificationId;
+
+      // 🔹 CREATE (random ID)
+      if (!notificationId) {
+        const notifRef = await addDoc(
+          collection(db, "users", draft.userId, "notifications"),
+          {
+            title: "Complaint Update",
+            message: message,
+            complaintId: draft.id,
+            read: false,
+            createdAt: serverTimestamp()
+          }
+        );
+
+        notificationId = notifRef.id;
+
+        // 🔹 SAVE notificationId in issue
+        await updateDoc(doc(db, "issues", draft.id), {
+          notificationId: notificationId
+        });
+
+        setDraft(prev => ({ ...prev, notificationId }));
+      }
+      // 🔹 UPDATE EXISTING
+      else {
+        await updateDoc(
+          doc(
+            db,
+            "users",
+            draft.userId,
+            "notifications",
+            notificationId
+          ),
+          {
+            message: message,
+            read: false,
+            updatedAt: serverTimestamp()
+          }
+        );
+      }
+
+      setMessage("");
+      alert("Notification sent successfully");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to send notification");
+    }
+  };
+
+  const handleFile = (files) => {
+    if (files && files.length) setProof(files[0]);
+  };
+
+  const handleMarkResolved = () => {
+    const next = { ...draft, status: "Completed" };
+    if (onSave) onSave(next);
+    alert("Marked as resolved");
   };
 
   return (
     <div className="complaint-detail">
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-        <button className="btn" onClick={onBack} style={{ background: 'transparent', border: '0', padding: 0 }}>
-          ← Back to Complaints
-        </button>
-      </div>
+      <button className="btn" onClick={onBack}>
+        ← Back
+      </button>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 18 }}>
-        {/* LEFT SIDE */}
-        <div>
-          <div className="panel detail-card">
+      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 20 }}>
+        {/* LEFT */}
+        <div className="panel">
+          <img
+            src={draft.img}
+            alt=""
+            style={{ width: "100%", maxHeight: 300, objectFit: "contain" }}
+          />
 
-            {/* 🔧 FIXED IMAGE */}
-            <img
-              src={draft.img || '/logo192.png'}
-              alt="detail"
-              onClick={() => window.open(draft.img, "_blank")}
-              style={{
-                width: "100%",
-                maxHeight: 360,
-                objectFit: "contain",
-                background: "#f1f5f9",
-                borderRadius: 8,
-                cursor: "zoom-in"
-              }}
-            />
+          <h3>{draft.title}</h3>
+          <p>{draft.desc}</p>
 
-            {/* ⬇ DOWNLOAD BUTTON */}
-            <button
-              className="btn"
-              onClick={handleDownloadImage}
-              style={{ marginTop: 10, width: "100%" }}
-            >
-              ⬇ Download Image
-            </button>
+          <p><strong>Location:</strong> {draft.location}</p>
+          <p><strong>Date:</strong> {draft.date}</p>
 
-            <h3 style={{ marginTop: 12 }}>{draft.title}</h3>
-            <div style={{ color: '#6b7280', marginTop: 8 }}>{draft.desc}</div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 14 }}>
-              <div style={{ background: '#fbfdff', padding: 12, borderRadius: 8 }}>
-                <div style={{ fontWeight: 700 }}>Location</div>
-                <div style={{ color: '#6b7280', marginTop: 8 }}>{draft.location}</div>
-              </div>
-              <div style={{ background: '#fbfdff', padding: 12, borderRadius: 8 }}>
-                <div style={{ fontWeight: 700 }}>Submitted</div>
-                <div style={{ color: '#6b7280', marginTop: 8 }}>{draft.date}</div>
-              </div>
-            </div>
-
-            <div style={{ marginTop: 18 }} className="panel">
-              <div className="panel-title">Location Map</div>
-              <div style={{
-                height: 220,
-                background: 'linear-gradient(180deg,#e8f6ea,#e6f8ee)',
-                borderRadius: 8,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#14532d'
-              }}>
-                Map showing complaint location
-              </div>
-            </div>
-
-            <div style={{ marginTop: 12 }} className="panel">
-              <div className="panel-title">Upload Resolution Proof</div>
-              {(draft.status === 'Pending' || draft.status === 'In Progress') ? (
-                <>
-                  <div style={{
-                    border: '2px dashed #e5e7eb',
-                    borderRadius: 8,
-                    padding: 22,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: 8
-                  }}>
-                    <input type="file" id="proof-file" style={{ display: 'none' }} onChange={e => handleFile(e.target.files)} />
-                    <label htmlFor="proof-file" style={{ cursor: 'pointer', color: '#6b7280' }}>
-                      Upload resolution photo
-                    </label>
-                    {proof && <div style={{ marginTop: 8 }}>{proof.name}</div>}
-                  </div>
-                  <div style={{ marginTop: 12 }}>
-                    <button className="btn" style={{ background: '#16a34a', color: '#fff', width: '100%' }} onClick={handleMarkResolved}>
-                      Mark as Resolved
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <div style={{ marginTop: 12 }}>
-                  <div className="panel-title">Resolution</div>
-                  <div style={{ color: '#6b7280', padding: 12 }}>
-                    This complaint is completed. No further uploads are needed.
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+          {draft.status !== "Completed" && (
+            <>
+              <input
+                type="file"
+                onChange={(e) => handleFile(e.target.files)}
+              />
+              {proof && <p>{proof.name}</p>}
+              <button
+                className="btn"
+                style={{ background: "#16a34a", color: "#fff" }}
+                onClick={handleMarkResolved}
+              >
+                Mark as Resolved
+              </button>
+            </>
+          )}
         </div>
 
-        {/* RIGHT SIDE (UNCHANGED) */}
+        {/* RIGHT */}
         <div>
           <div className="panel">
             <div className="panel-title">Update Status</div>
             <select
               value={draft.status}
-              onChange={e => handleChange('status', e.target.value)}
-              style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #eef2f7' }}
+              onChange={(e) => handleChange("status", e.target.value)}
             >
               <option>Pending</option>
               <option>In Progress</option>
               <option>Completed</option>
             </select>
+
             <button
               className="btn"
-              style={{ background: '#16a34a', color: '#fff', width: '100%', marginTop: 12 }}
+              style={{ background: "#16a34a", color: "#fff", width: "100%" }}
               onClick={handleUpdateStatus}
             >
               Update Status
@@ -184,31 +173,33 @@ export default function ComplaintDetail({ complaint, onBack, onSave, authorities
           </div>
 
           <div className="panel" style={{ marginTop: 12 }}>
-            <div className="panel-title">Assign to Team Member</div>
+            <div className="panel-title">Assign Authority</div>
             <select
-              value={draft.authority || ''}
-              onChange={e => handleAssign(e.target.value)}
-              style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #eef2f7' }}
+              value={draft.authority || ""}
+              onChange={(e) => handleAssign(e.target.value)}
             >
               <option value="">Unassigned</option>
-              {authorities.map(a => (
-                <option key={a.id} value={a.name}>{a.name}</option>
+              {authorities.map((a) => (
+                <option key={a.id} value={a.name}>
+                  {a.name}
+                </option>
               ))}
             </select>
-            <button className="btn" style={{ width: '100%', marginTop: 12 }}>
-              Assign Team Member
-            </button>
           </div>
 
           <div className="panel" style={{ marginTop: 12 }}>
             <div className="panel-title">Send Update to Citizen</div>
             <textarea
-              placeholder="Type message to send to citizen..."
               value={message}
-              onChange={e => setMessage(e.target.value)}
-              style={{ width: '100%', minHeight: 100, padding: 12, borderRadius: 8, border: '1px solid #eef2f7' }}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Type message..."
+              style={{ width: "100%", minHeight: 100 }}
             />
-            <button className="btn" style={{ marginTop: 12, width: '100%' }} onClick={handleSendMessage}>
+            <button
+              className="btn"
+              style={{ marginTop: 12, width: "100%" }}
+              onClick={handleSendMessage}
+            >
               Send Notification
             </button>
           </div>

@@ -139,6 +139,7 @@ export default function Dashboard() {
         const data = d.data();
         return {
           id: d.id,
+          userId: data.userId,
           title: data.type,
           desc: data.description,
           location: data.address,
