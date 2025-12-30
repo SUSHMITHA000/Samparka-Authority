@@ -9,12 +9,34 @@ import {
   updateDoc,
   doc as fsDoc,
   getDoc,
-  doc
+  doc,
+  addDoc
 } from "firebase/firestore";
 
 import { auth, db } from "../firebase";
 import ComplaintDetail from "../pages/ComplaintDetail";
 import Reports from "../pages/Reports.jsx";
+const staticImportantUpdates = [
+  {
+    id: "static-1",
+    eventName: "Blood Donation Camp",
+    date: "2025-03-15",
+    time: "10:00 AM",
+    description:
+      "Blood donation camp organized at the Panchayat office. All healthy citizens are encouraged to participate.",
+    createdAt: "2025-03-10"
+  },
+  {
+    id: "static-2",
+    eventName: "Gram Panchayat Monthly Meeting",
+    date: "2025-03-20",
+    time: "11:30 AM",
+    description:
+      "Discussion on water supply, road maintenance, and village development activities.",
+    createdAt: "2025-03-12"
+  }
+];
+
 
 
 
@@ -53,10 +75,10 @@ function Sidebar({ onLogout, active, setActive, authority }) {
         </button>
 
         <button
-          className={`nav-item ${active === "authorities" ? "active" : ""}`}
-          onClick={() => setActive("authorities")}
+          className={`nav-item ${active === "communityUpdates" ? "active" : ""}`}
+          onClick={() => setActive("communityUpdates")}
         >
-          Authorities
+          Community Updates
         </button>
 
         <button
@@ -110,6 +132,50 @@ export default function Dashboard() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [authority, setAuthority] = useState(null);
+  const [communityUpdates, setCommunityUpdates] = useState([]);
+  const [newEventName, setNewEventName] = useState("");
+  const [newDate, setNewDate] = useState("");
+  const [newTime, setNewTime] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [creatingUpdate, setCreatingUpdate] = useState(false);
+  const [createMessage, setCreateMessage] = useState("");
+
+  const handleCreateUpdate = async () => {
+    const name = (newEventName || "").trim();
+    const date = (newDate || "").trim();
+    const time = (newTime || "").trim();
+    const desc = (newDescription || "").trim();
+
+    if (!name || !date) {
+      setCreateMessage("Please provide event name and date.");
+      return;
+    }
+
+    setCreatingUpdate(true);
+    setCreateMessage("");
+
+    try {
+      await addDoc(collection(db, "communityUpdates"), {
+        eventName: name,
+        date: date,
+        time: time,
+        description: desc,
+        createdAt: Date.now()
+      });
+
+      setNewEventName("");
+      setNewDate("");
+      setNewTime("");
+      setNewDescription("");
+      setCreateMessage("Update created");
+    } catch (err) {
+      console.error("create update error:", err);
+      setCreateMessage("Failed to create update. See console for details.");
+    } finally {
+      setCreatingUpdate(false);
+      setTimeout(() => setCreateMessage(""), 3000);
+    }
+  };
 
   /* ---------- LOAD AUTHORITY ---------- */
   useEffect(() => {
@@ -155,6 +221,34 @@ export default function Dashboard() {
       });
 
       setComplaints(list);
+    });
+
+    return () => unsub();
+  }, []);
+
+  /* ---------- REAL-TIME FIRESTORE COMMUNITY UPDATES ---------- */
+  useEffect(() => {
+    const q = query(
+      collection(db, "communityUpdates"),
+      orderBy("date", "desc")
+    );
+
+    const unsub = onSnapshot(q, (snapshot) => {
+      const list = snapshot.docs.map(d => {
+        const data = d.data();
+        return {
+          id: d.id,
+          eventName: data.eventName,
+          date: data.date,
+          time: data.time,
+          description: data.description,
+          createdAt: data.createdAt
+            ? new Date(data.createdAt).toISOString().split("T")[0]
+            : new Date().toISOString().split("T")[0]
+        };
+      });
+
+      setCommunityUpdates(list);
     });
 
     return () => unsub();
@@ -240,6 +334,20 @@ export default function Dashboard() {
               <div className="panel notifications-panel">
                 <div className="panel-title">Notifications</div>
 
+                {/* Community Updates Notifications */}
+                {communityUpdates.slice(0, 3).map(update => (
+                  <div
+                    key={update.id}
+                    className="notif-item community-notif"
+                    onClick={() => setActive("communityUpdates")}
+                  >
+                    <span className="notif-badge">UPDATE</span>
+                    <div className="notif-title">📢 {update.eventName}</div>
+                    <div className="notif-sub">{update.date} • {update.time}</div>
+                  </div>
+                ))}
+
+                {/* Complaint Notifications */}
                 {complaints.slice(0, 5).map(c => (
                   <div
                     key={c.id}
@@ -416,6 +524,106 @@ export default function Dashboard() {
             }}
             onSave={handleSave}
           />
+        )}
+
+        {/* ================= COMMUNITY UPDATES ================= */}
+        {active === "communityUpdates" && (
+          <div className="community-updates-page">
+            <header className="dash-header">
+              <h2>Community Updates</h2>
+            </header>
+
+            {/* Authority form to add new community updates */}
+            {authority && (
+              <div className="panel" style={{ marginBottom: 16 }}>
+                <h3 style={{ marginTop: 0 }}>Create New Update</h3>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <input
+                    className="input"
+                    placeholder="Event name"
+                    value={newEventName}
+                    onChange={e => setNewEventName(e.target.value)}
+                    style={{ flex: 2 }}
+                  />
+                  <input
+                    className="input"
+                    type="date"
+                    value={newDate}
+                    onChange={e => setNewDate(e.target.value)}
+                    style={{ width: 160 }}
+                  />
+                  <input
+                    className="input"
+                    type="time"
+                    value={newTime}
+                    onChange={e => setNewTime(e.target.value)}
+                    style={{ width: 140 }}
+                  />
+                </div>
+
+                <textarea
+                  className="input textarea"
+                  placeholder="Short description"
+                  value={newDescription}
+                  onChange={e => setNewDescription(e.target.value)}
+                  style={{ marginTop: 8 }}
+                />
+
+                <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 12 }}>
+                  <button
+                    className="btn"
+                    onClick={handleCreateUpdate}
+                    disabled={creatingUpdate}
+                  >
+                    {creatingUpdate ? "Creating..." : "Update"}
+                  </button>
+                  {createMessage && (
+                    <div style={{ color: createMessage.includes("Failed") ? "#b91c1c" : "#065f46" }}>
+                      {createMessage}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="community-updates-container">
+  {(communityUpdates.length === 0
+    ? staticImportantUpdates
+    : communityUpdates
+  ).map(update => (
+    <div key={update.id} className="community-update-card">
+      <div className="update-header">
+        <h3 className="update-title">{update.eventName}</h3>
+        <span className="update-badge">
+          {update.eventName.toLowerCase().includes("blood")
+            ? "IMPORTANT"
+            : "MEETING"}
+        </span>
+      </div>
+
+      <div className="update-meta">
+        <div className="update-meta-item">
+          <span className="meta-label">📅 Date:</span>
+          <span className="meta-value">{update.date}</span>
+        </div>
+        <div className="update-meta-item">
+          <span className="meta-label">⏰ Time:</span>
+          <span className="meta-value">{update.time}</span>
+        </div>
+      </div>
+
+      <div className="update-description">
+        <p>{update.description}</p>
+      </div>
+
+      <div className="update-footer">
+        <span className="update-date">Posted: {update.createdAt}</span>
+      </div>
+    </div>
+  ))}
+</div>
+
+          </div>
         )}
       </div>
     </div>
